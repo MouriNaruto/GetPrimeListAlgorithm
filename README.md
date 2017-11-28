@@ -1,2 +1,35 @@
-# GetPrimeListAlgorithm Project
-One of high performance algorithms for getting a list of primes.
+﻿# 自制高效率求质数表算法
+
+## 自制缘由
+- 2017年3月31日，教我们C语言的老师谈到如何使用C语言判断一个数是否是质数。他最开
+  始的思路是判断2~n-1范围的数是否可以整除n。随后老师说由于数学家证明了如果用2到
+  根号n之间的任意整数均无法整除n则n为质数。于是仅需判断2~根号n范围的数是否可以
+  整除n即可。接着老师说：“代码的优化就是这样的，优化代码也是一种乐趣“。这成功
+  的引起了我的兴致。
+- 虽然通过度娘查资料发现很多人都推荐使用“欧拉筛法”和“埃拉托斯特尼筛法”，遗
+  憾的是我当时并没读懂那些人写的代码。（一堆命名为a，b，c的变量，吐）
+
+## 实现思路
+- 很抱歉，由于这个算法主要是我自己睡一觉后想出来的。于是除了可能是区间素数筛法
+  的改良外其他的我一概不知。
+- 我希望有人可以说明下这个算法的原理和计算其复杂度。
+
+## 放到GitHub的缘由
+- 本来我发到Covariant Studio群,希望让他们说明下我的思路。群主建议我先开个repo再
+  说。
+
+## 性能参考
+- 测试环境
+  - Intel Celeron M 420 @ 1.60GHz
+  - 2GB DDR2 667
+  - Windows 10 LTSB 2016 Build 14393
+  - Visual Studio 2017 Community
+- 测试项目：在Celebrate获取0～0x7FFFFFFF(2147483647)范围内的所有素数
+- 执行时间：小于1分钟
+- 内存占用：约256MB
+
+## 开源许可和感谢人士
+- 开源许可：The MIT License
+- 感谢人士：driver1998、th1r5bvn23、TooYoungTooSimp
+
+## Mouri_Naruto
