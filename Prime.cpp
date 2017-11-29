@@ -27,11 +27,9 @@ unsigned long* GetPrimeList(unsigned long MaxNum)
 	unsigned long *BitArray = (unsigned long*)malloc(size);
 	if (BitArray)
 	{
-		// 令偶数的对应位为1，奇数的对应位为0的魔数
-		const unsigned long long MagicNum = 0xAAAAAAAAAAAAAAAA;
-		
-		// 内存块初始化，假定该范围奇数都是素数且偶数都是合数
-		memset(BitArray, MagicNum, size);
+		// 内存块初始化为令偶数的对应位为1且奇数的对应位为0的魔数，假定该范围奇
+		// 数都是素数且偶数都是合数。
+		memset(BitArray, 0xAA, size);
 
 		// 设1不是质数，2是质数
 		SET_BIT_FALSE(BitArray, 1);
@@ -75,9 +73,10 @@ ULONGLONG M2GetTickCount()
 	return GetTickCount64();
 }
 
-int main()
-{		
-	unsigned long MaxNum = 0x7FFFFFFF; //0x3FFFFFFF;
+template<class Function>
+void Test(Function func)
+{
+	unsigned long MaxNum = 0x3FFFFFFF; //0x7FFFFFFF;
 
 	unsigned long sum = 0;
 
@@ -85,7 +84,7 @@ int main()
 
 	ULONGLONG StartTime = M2GetTickCount();
 
-	unsigned long* BitMap = GetPrimeList(MaxNum);
+	unsigned long* BitMap = func(MaxNum);
 
 	ULONGLONG EndTime = M2GetTickCount();
 	wprintf(L"Time = %llu ms\n", EndTime - StartTime);
@@ -104,6 +103,52 @@ int main()
 
 		free(BitMap);
 	}
+}
 
+
+int main0()
+{		
+	Test<>(&GetPrimeList);
+	
+	
+
+	return 0;
+}
+
+
+//bool notPrime[1 << 24];
+unsigned long notPrime[((0x3FFFFFFF + 1) >> 5) + 1];
+size_t prime[54400028], pcnt;
+int main()
+{
+	Test<>(&GetPrimeList);
+	
+	Sleep(1000);
+	
+	ULONGLONG StartTime = M2GetTickCount();
+
+	//memset(notPrime, 0x55, sizeof(notPrime));
+
+	const size_t x = (sizeof(notPrime) + sizeof(prime)) >> 20;
+
+	//notPrime[1] = true;
+	SET_BIT_TRUE(notPrime, 1);
+	for (size_t i = 2; i < 0x3FFFFFFF; ++i)
+	{
+		//if (!notPrime[i]) prime[pcnt++] = i;
+		if (!GET_BIT_VALUE(notPrime, i)) prime[pcnt++] = i;
+		for (size_t j = 0; j < pcnt && i * prime[j] < 0x3FFFFFFF; ++j)
+		{
+			//notPrime[i * prime[j]] = true;
+			SET_BIT_TRUE(notPrime, i * prime[j]);
+			if (i % prime[j] == 0) break;
+		}
+	}
+
+	ULONGLONG EndTime = M2GetTickCount();
+	wprintf(L"Time = %llu ms\n", EndTime - StartTime);
+	
+	printf("%ld\n", pcnt);
+	
 	return 0;
 }
