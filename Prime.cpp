@@ -76,7 +76,7 @@ ULONGLONG M2GetTickCount()
 template<class Function>
 void Test(Function func)
 {
-	unsigned long MaxNum = 0x3FFFFFFF; //0x7FFFFFFF;
+	unsigned long MaxNum = 0xFFFFFF; //0x7FFFFFFF;
 
 	unsigned long sum = 0;
 
@@ -105,50 +105,118 @@ void Test(Function func)
 	}
 }
 
+#include <bitset>
+#include <vector>
 
-int main0()
+std::vector<unsigned long> GetPrimeListFast(unsigned long MaxNum)
+{
+	size_t size = ((MaxNum + 1) >> 3) + 1;
+	
+	std::vector<unsigned long> PrimeList;
+	std::vector<unsigned long> NotPrimeBitArray(size, 0);
+
+	unsigned long* pNotPrimeBitArray = &NotPrimeBitArray[0];
+	
+	SET_BIT_TRUE(pNotPrimeBitArray, 1);
+	SET_BIT_FALSE(pNotPrimeBitArray, 2);
+
+	PrimeList.push_back(2);
+
+	size_t PrimeCount = 1;
+	unsigned long* PrimeListPointer = &PrimeList[0];
+
+	for (size_t i = 3; i < MaxNum; i += 2)
+	{
+		if (!GET_BIT_VALUE(pNotPrimeBitArray, i))
+		{
+			if (PrimeCount == PrimeList.size())
+			{
+				PrimeList.resize(PrimeCount + (2 << 16));
+				PrimeListPointer = &PrimeList[0];
+			}
+			
+			PrimeListPointer[PrimeCount++] = i;
+
+			//PrimeList.push_back(i);
+		}
+
+		
+		for (size_t j = 0; j < PrimeCount && i * PrimeListPointer[j] < MaxNum; ++j)
+		{
+			SET_BIT_TRUE(pNotPrimeBitArray, i * PrimeListPointer[j]);
+			if (i % PrimeListPointer[j] == 0) break;
+		}
+	}
+
+	PrimeList.resize(PrimeCount);
+
+	return PrimeList;
+}
+
+/*
+使用改进后的线性素数筛法获取[0,MaxNum]范围内的素数情况
+返回的是用malloc分配的记录素数情况的位图
+*/
+unsigned long* GetPrimeList2(unsigned long MaxNum)
+{
+	// 计算内存块大小
+	size_t size = ((MaxNum + 1) >> 3) + 1;
+
+	// 分配一块内存
+	unsigned long *BitArray = (unsigned long*)malloc(size);
+	if (BitArray)
+	{
+		// 内存块初始化为令偶数的对应位为1且奇数的对应位为0的魔数，假定该范围奇
+		// 数都是素数且偶数都是合数。
+		memset(BitArray, 0xAA, size);
+
+		// 设1不是质数，2是质数
+		SET_BIT_FALSE(BitArray, 1);
+		SET_BIT_TRUE(BitArray, 2);
+	
+		// 获取[3, sqrt(MaxNum))范围内的质数，因为[2, n]之间的任意所有合数都能
+		// 由[2, sqrt(n)]内的任意质数组合得到。
+		for (unsigned long p = 3; p <= MaxNum / p; p += 2)
+		{
+			if (!GET_BIT_VALUE(BitArray, p)) continue;
+			for (unsigned long i = p; i <= MaxNum / p; i += 2)
+			{
+				if (!GET_BIT_VALUE(BitArray, i)) continue;
+				for (unsigned long long j = i * p; j <= MaxNum; j *= p)
+				{
+					SET_BIT_FALSE(BitArray, j);
+				}
+					
+			}				
+		}
+	}
+
+	return BitArray;
+}
+
+int main()
 {		
-	Test<>(&GetPrimeList);
+	Test<>(&GetPrimeList2);
 	
 	
 
 	return 0;
 }
 
-
-//bool notPrime[1 << 24];
-unsigned long notPrime[((0x3FFFFFFF + 1) >> 5) + 1];
-size_t prime[54400028], pcnt;
-int main()
+int main1()
 {
-	Test<>(&GetPrimeList);
+	//Test<>(&GetPrimeList);
 	
 	Sleep(1000);
 	
 	ULONGLONG StartTime = M2GetTickCount();
 
-	//memset(notPrime, 0x55, sizeof(notPrime));
-
-	const size_t x = (sizeof(notPrime) + sizeof(prime)) >> 20;
-
-	//notPrime[1] = true;
-	SET_BIT_TRUE(notPrime, 1);
-	for (size_t i = 2; i < 0x3FFFFFFF; ++i)
-	{
-		//if (!notPrime[i]) prime[pcnt++] = i;
-		if (!GET_BIT_VALUE(notPrime, i)) prime[pcnt++] = i;
-		for (size_t j = 0; j < pcnt && i * prime[j] < 0x3FFFFFFF; ++j)
-		{
-			//notPrime[i * prime[j]] = true;
-			SET_BIT_TRUE(notPrime, i * prime[j]);
-			if (i % prime[j] == 0) break;
-		}
-	}
+	std::vector<unsigned long> PrimeList = GetPrimeListFast(0x7FFFFFFF);
 
 	ULONGLONG EndTime = M2GetTickCount();
 	wprintf(L"Time = %llu ms\n", EndTime - StartTime);
 	
-	printf("%ld\n", pcnt);
+	printf("%ld\n", PrimeList.size());
 	
 	return 0;
 }
