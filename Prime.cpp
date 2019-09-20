@@ -76,7 +76,7 @@ ULONGLONG M2GetTickCount()
 template<class Function>
 void Test(Function func)
 {
-	unsigned long MaxNum = 0xFFFFFF; //0x7FFFFFFF;
+	unsigned long MaxNum = 0x7FFFFFFF;
 
 	unsigned long sum = 0;
 
@@ -153,6 +153,10 @@ std::vector<unsigned long> GetPrimeListFast(unsigned long MaxNum)
 	return PrimeList;
 }
 
+#define GetBit(Array, BitIndex) static_cast<bool>((Array)[(BitIndex) >> 5] & (1 << ((BitIndex) & 0x1F)))
+
+#define InvertBit(Array, BitIndex) (Array)[(BitIndex) >> 5] ^= 1 << ((BitIndex) & 0x1F)
+
 /*
 使用改进后的线性素数筛法获取[0,MaxNum]范围内的素数情况
 返回的是用malloc分配的记录素数情况的位图
@@ -163,7 +167,7 @@ unsigned long* GetPrimeList2(unsigned long MaxNum)
 	size_t size = ((MaxNum + 1) >> 3) + 1;
 
 	// 分配一块内存
-	unsigned long *BitArray = (unsigned long*)malloc(size);
+	unsigned long* BitArray = (unsigned long*)malloc(size);
 	if (BitArray)
 	{
 		// 内存块初始化为令偶数的对应位为1且奇数的对应位为0的魔数，假定该范围奇
@@ -171,20 +175,20 @@ unsigned long* GetPrimeList2(unsigned long MaxNum)
 		memset(BitArray, 0xAA, size);
 
 		// 设1不是质数，2是质数
-		SET_BIT_FALSE(BitArray, 1);
-		SET_BIT_TRUE(BitArray, 2);
+		InvertBit(BitArray, 1);
+		InvertBit(BitArray, 2);
 	
 		// 获取[3, sqrt(MaxNum))范围内的质数，因为[2, n]之间的任意所有合数都能
 		// 由[2, sqrt(n)]内的任意质数组合得到。
 		for (unsigned long p = 3; p <= MaxNum / p; p += 2)
 		{
-			if (!GET_BIT_VALUE(BitArray, p)) continue;
+			if (!GetBit(BitArray, p)) continue;
 			for (unsigned long i = p; i <= MaxNum / p; i += 2)
 			{
-				if (!GET_BIT_VALUE(BitArray, i)) continue;
+				if (!GetBit(BitArray, i)) continue;
 				for (unsigned long long j = i * p; j <= MaxNum; j *= p)
 				{
-					SET_BIT_FALSE(BitArray, j);
+					InvertBit(BitArray, j);
 				}
 					
 			}				
@@ -196,9 +200,33 @@ unsigned long* GetPrimeList2(unsigned long MaxNum)
 
 int main()
 {		
-	Test<>(&GetPrimeList2);
-	
-	
+	unsigned long MaxNum = 0x7FFFFFFF;
+
+	unsigned long sum = 0;
+
+	Sleep(1000);
+
+	ULONGLONG StartTime = M2GetTickCount();
+
+	unsigned long* BitMap = GetPrimeList2(MaxNum);
+
+	ULONGLONG EndTime = M2GetTickCount();
+	wprintf(L"Time = %llu ms\n", EndTime - StartTime);
+
+	if (BitMap)
+	{
+		for (unsigned long i = 0; i < MaxNum; ++i)
+		{
+			if (GetBit(BitMap, i))
+			{
+				++sum;
+			}
+		}
+
+		printf("%ld\n", sum);
+
+		free(BitMap);
+	}
 
 	return 0;
 }
