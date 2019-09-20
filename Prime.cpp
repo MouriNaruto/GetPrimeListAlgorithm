@@ -1,5 +1,7 @@
 ﻿#include <SDKDDKVer.h>
 
+#include <cstdint>
+
 #include <stdio.h>
 #include <tchar.h>
 #include <math.h>
@@ -18,13 +20,13 @@
 使用改进后的区间素数筛法获取[0,MaxNum]范围内的素数情况
 返回的是用malloc分配的记录素数情况的位图
 */
-unsigned long* GetPrimeList(unsigned long MaxNum)
+uint32_t* GetPrimeList(uint32_t MaxNum)
 {	
 	// 计算内存块大小
 	size_t size = ((MaxNum + 1) >> 3) + 1;
 
 	// 分配一块内存
-	unsigned long *BitArray = (unsigned long*)malloc(size);
+	uint32_t *BitArray = reinterpret_cast<uint32_t*>(malloc(size));
 	if (BitArray)
 	{
 		// 内存块初始化为令偶数的对应位为1且奇数的对应位为0的魔数，假定该范围奇
@@ -37,8 +39,8 @@ unsigned long* GetPrimeList(unsigned long MaxNum)
  
 		// 获取[3, sqrt(MaxNum))范围内的质数，因为[2, n]之间的任意所有合数都能
 		// 由[2, sqrt(n)]内的任意质数组合得到。
-		unsigned long MaxRange = sqrt(MaxNum);
-		for (unsigned long CurNum = 3; CurNum < MaxRange + 1; CurNum += 2)
+		uint32_t MaxRange = static_cast<uint32_t>(sqrt(MaxNum));
+		for (uint32_t CurNum = 3; CurNum < MaxRange + 1; CurNum += 2)
 		{
 			// 如果CurNum不为质数，则跳过
 			if (!GET_BIT_VALUE(BitArray, CurNum)) continue;
@@ -46,7 +48,7 @@ unsigned long* GetPrimeList(unsigned long MaxNum)
 			// 如果CurNum为质数，则用其筛掉[CurNum^2 ,MaxNum]范围内可以整除该质
 			// 数的奇合数。因为在之前初始化内存块时已经筛去了全部的偶合数且n能
 			// 把n^2以上的合数筛掉,[n,n^2]之间的会被比n小的质数筛掉。
-			for (unsigned long i = CurNum * CurNum; i < MaxNum; i += CurNum << 1)
+			for (uint32_t i = CurNum * CurNum; i < MaxNum; i += CurNum << 1)
 			{
 				if (GET_BIT_VALUE(BitArray, i)) SET_BIT_FALSE(BitArray, i);
 			}
@@ -76,22 +78,22 @@ ULONGLONG M2GetTickCount()
 template<class Function>
 void Test(Function func)
 {
-	unsigned long MaxNum = 0x7FFFFFFF;
+	uint32_t MaxNum = 0x7FFFFFFF;
 
-	unsigned long sum = 0;
+	uint32_t sum = 0;
 
 	Sleep(1000);
 
 	ULONGLONG StartTime = M2GetTickCount();
 
-	unsigned long* BitMap = func(MaxNum);
+	uint32_t* BitMap = func(MaxNum);
 
 	ULONGLONG EndTime = M2GetTickCount();
 	wprintf(L"Time = %llu ms\n", EndTime - StartTime);
 
 	if (BitMap)
 	{
-		for (unsigned long i = 0; i < MaxNum; ++i)
+		for (uint32_t i = 0; i < MaxNum; ++i)
 		{
 			if (GET_BIT_VALUE(BitMap, i))
 			{
@@ -108,24 +110,24 @@ void Test(Function func)
 #include <bitset>
 #include <vector>
 
-std::vector<unsigned long> GetPrimeListFast(unsigned long MaxNum)
+std::vector<uint32_t> GetPrimeListFast(uint32_t MaxNum)
 {
 	size_t size = ((MaxNum + 1) >> 3) + 1;
 	
-	std::vector<unsigned long> PrimeList;
-	std::vector<unsigned long> NotPrimeBitArray(size, 0);
+	std::vector<uint32_t> PrimeList;
+	std::vector<uint32_t> NotPrimeBitArray(size, 0);
 
-	unsigned long* pNotPrimeBitArray = &NotPrimeBitArray[0];
+	uint32_t* pNotPrimeBitArray = &NotPrimeBitArray[0];
 	
 	SET_BIT_TRUE(pNotPrimeBitArray, 1);
 	SET_BIT_FALSE(pNotPrimeBitArray, 2);
 
 	PrimeList.push_back(2);
 
-	size_t PrimeCount = 1;
-	unsigned long* PrimeListPointer = &PrimeList[0];
+	uint32_t PrimeCount = 1;
+	uint32_t* PrimeListPointer = &PrimeList[0];
 
-	for (size_t i = 3; i < MaxNum; i += 2)
+	for (uint32_t i = 3; i < MaxNum; i += 2)
 	{
 		if (!GET_BIT_VALUE(pNotPrimeBitArray, i))
 		{
@@ -161,13 +163,13 @@ std::vector<unsigned long> GetPrimeListFast(unsigned long MaxNum)
 使用改进后的线性素数筛法获取[0,MaxNum]范围内的素数情况
 返回的是用malloc分配的记录素数情况的位图
 */
-unsigned long* GetPrimeList2(unsigned long MaxNum)
+uint32_t* GetPrimeList2(uint32_t MaxNum)
 {
 	// 计算内存块大小
 	size_t size = ((MaxNum + 1) >> 3) + 1;
 
 	// 分配一块内存
-	unsigned long* BitArray = (unsigned long*)malloc(size);
+	uint32_t* BitArray = reinterpret_cast<uint32_t*>(malloc(size));
 	if (BitArray)
 	{
 		// 内存块初始化为令偶数的对应位为1且奇数的对应位为0的魔数，假定该范围奇
@@ -180,13 +182,13 @@ unsigned long* GetPrimeList2(unsigned long MaxNum)
 	
 		// 获取[3, sqrt(MaxNum))范围内的质数，因为[2, n]之间的任意所有合数都能
 		// 由[2, sqrt(n)]内的任意质数组合得到。
-		for (unsigned long p = 3; p <= MaxNum / p; p += 2)
+		for (uint32_t p = 3; p <= MaxNum / p; p += 2)
 		{
 			if (!GetBit(BitArray, p)) continue;
-			for (unsigned long i = p; i <= MaxNum / p; i += 2)
+			for (uint32_t i = p; i <= MaxNum / p; i += 2)
 			{
 				if (!GetBit(BitArray, i)) continue;
-				for (unsigned long long j = i * p; j <= MaxNum; j *= p)
+				for (uint64_t j = i * p; j <= MaxNum; j *= p)
 				{
 					InvertBit(BitArray, j);
 				}
@@ -200,22 +202,22 @@ unsigned long* GetPrimeList2(unsigned long MaxNum)
 
 int main()
 {		
-	unsigned long MaxNum = 0x7FFFFFFF;
+	uint32_t MaxNum = 0x7FFFFFFF;
 
-	unsigned long sum = 0;
+	uint32_t sum = 0;
 
 	Sleep(1000);
 
 	ULONGLONG StartTime = M2GetTickCount();
 
-	unsigned long* BitMap = GetPrimeList2(MaxNum);
+	uint32_t* BitMap = GetPrimeList2(MaxNum);
 
 	ULONGLONG EndTime = M2GetTickCount();
 	wprintf(L"Time = %llu ms\n", EndTime - StartTime);
 
 	if (BitMap)
 	{
-		for (unsigned long i = 0; i < MaxNum; ++i)
+		for (uint32_t i = 0; i < MaxNum; ++i)
 		{
 			if (GetBit(BitMap, i))
 			{
@@ -239,12 +241,12 @@ int main1()
 	
 	ULONGLONG StartTime = M2GetTickCount();
 
-	std::vector<unsigned long> PrimeList = GetPrimeListFast(0x7FFFFFFF);
+	std::vector<uint32_t> PrimeList = GetPrimeListFast(0x7FFFFFFF);
 
 	ULONGLONG EndTime = M2GetTickCount();
 	wprintf(L"Time = %llu ms\n", EndTime - StartTime);
 	
-	printf("%ld\n", PrimeList.size());
+	printf("%llu\n", PrimeList.size());
 	
 	return 0;
 }
